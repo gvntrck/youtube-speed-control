@@ -47,4 +47,12 @@ git clone https://github.com/gvntrck/youtube-speed-control.git
 
 ## 📄 Licença
 
-Projeto de código aberto para uso livre.
+Este projeto está licenciado sob a **GNU General Public License v3.0 (GPL-3.0)**.
+
+Você é livre para:
+- ✅ Usar o software para qualquer propósito
+- ✅ Estudar como o programa funciona e adaptá-lo
+- ✅ Redistribuir cópias
+- ✅ Melhorar o programa e liberar suas melhorias
+
+Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
