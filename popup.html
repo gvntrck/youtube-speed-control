@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>YouTube Speed Control</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      width: 220px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: #d32f2f; /* YouTube Red */
+      text-align: center;
+    }
+    .speed-buttons button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #fff;
+      color: #333;
+      cursor: pointer;
+      text-align: center;
+      font-size: 14px;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+    .speed-buttons button:hover {
+      background-color: #e0e0e0;
+      border-color: #ccc;
+    }
+    .speed-buttons button.active {
+      background-color: #d32f2f; /* YouTube Red */
+      color: white;
+      border-color: #c62828;
+      font-weight: bold;
+    }
+    .speed-buttons button.off.active {
+        background-color: #757575; /* Gray for off */
+        border-color: #616161;
+    }
+  </style>
+</head>
+<body>
+  <h3>Velocidade de Reprodução</h3>
+  <div class="speed-buttons">
+    <button data-speed="1.0">1.0x (Normal)</button>
+    <button data-speed="1.25">1.25x</button>
+    <button data-speed="1.5">1.5x</button>
+    <button data-speed="1.75">1.75x</button>
+    <button data-speed="2.0">2.0x</button>
+    <button data-speed="off" class="off">Desligar Controle</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

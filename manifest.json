@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Speed Control",
+  "version": "2.1",
+  "description": "Controla facilmente a velocidade de reprodução dos vídeos do YouTube.",
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+    
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/watch*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
