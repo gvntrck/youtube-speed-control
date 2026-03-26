@@ -1,90 +1,237 @@
-let currentTargetSpeed = null; // null indica que o controle da extensão está desligado
-let debounceTimer = null; // Timer para debounce do MutationObserver
-
-// Função para aplicar a velocidade ao elemento de vídeo
-function applySpeedToVideo(videoElement, speedToApply) {
-  if (!videoElement) return;
-
-  if (speedToApply === null) {
-    // Se o controle está desligado (speedToApply é null), não fazemos nada.
-    // O vídeo continuará na velocidade que o YouTube ou o usuário definiu.
-    // Se quiséssemos resetar para 1.0x ao desligar, faríamos: videoElement.playbackRate = 1.0;
-    console.log('Controle de velocidade da extensão desligado. Velocidade do vídeo não alterada.');
+(() => {
+  if (window.__youtubeSpeedControlInitialized) {
     return;
   }
 
-  if (videoElement.playbackRate !== speedToApply) {
-    videoElement.playbackRate = speedToApply;
-    console.log(`Velocidade do vídeo definida para ${speedToApply}x pela extensão.`);
-  }
-}
+  window.__youtubeSpeedControlInitialized = true;
 
-// Encontra o vídeo e aplica a velocidade configurada
-function findAndApplyConfiguredSpeed() {
-  const video = document.querySelector('video.html5-main-video');
-  if (video) {
-    // Aplica apenas se currentTargetSpeed não for null (ou seja, controle está "ligado")
-    if (currentTargetSpeed !== null) {
-      if (video.readyState >= 1) { // HAVE_METADATA ou superior
-        applySpeedToVideo(video, currentTargetSpeed);
-      } else {
-        video.addEventListener('loadedmetadata', function onLoadedMetadata() {
-          applySpeedToVideo(video, currentTargetSpeed);
-        }, { once: true });
+  const STORAGE_KEY = "youtubePlaybackSpeed";
+  const VIDEO_EVENTS = ["loadedmetadata", "canplay", "play", "emptied"];
+  const NAVIGATION_EVENTS = [
+    "yt-navigate-finish",
+    "yt-page-data-updated",
+    "popstate",
+    "pageshow"
+  ];
+  const SPEED_EPSILON = 0.01;
+
+  const state = {
+    preferredSpeed: null,
+    currentVideo: null,
+    syncTimer: null,
+    isApplyingSpeed: false,
+    pendingResetToNormal: false
+  };
+
+  function normalizeSpeed(value) {
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+      return null;
+    }
+
+    return Math.min(16, Math.max(0.25, value));
+  }
+
+  function isSameSpeed(left, right) {
+    return Math.abs(left - right) < SPEED_EPSILON;
+  }
+
+  function scheduleSync(delay = 120) {
+    if (state.syncTimer !== null) {
+      if (delay !== 0) {
+        return;
       }
-    } else {
-      // Se currentTargetSpeed é null, a extensão está desligada, então não interfere.
-      applySpeedToVideo(video, null); // Informa que o controle está desligado
+
+      window.clearTimeout(state.syncTimer);
+    }
+
+    state.syncTimer = window.setTimeout(() => {
+      state.syncTimer = null;
+      syncVideoReference();
+    }, delay);
+  }
+
+  function getVideoElement() {
+    return document.querySelector("video.html5-main-video, ytd-player video, video");
+  }
+
+  function releaseVideo() {
+    if (!state.currentVideo) {
+      return;
+    }
+
+    VIDEO_EVENTS.forEach((eventName) => {
+      state.currentVideo.removeEventListener(eventName, handleVideoLifecycle);
+    });
+
+    state.currentVideo.removeEventListener("ratechange", handleRateChange);
+    state.currentVideo = null;
+  }
+
+  function bindVideo(video) {
+    if (state.currentVideo === video) {
+      return;
+    }
+
+    releaseVideo();
+
+    if (!video) {
+      return;
+    }
+
+    state.currentVideo = video;
+
+    VIDEO_EVENTS.forEach((eventName) => {
+      state.currentVideo.addEventListener(eventName, handleVideoLifecycle, {
+        passive: true
+      });
+    });
+
+    state.currentVideo.addEventListener("ratechange", handleRateChange);
+  }
+
+  function applyPlaybackRate(targetSpeed, video = state.currentVideo) {
+    if (!video || targetSpeed === null) {
+      return;
+    }
+
+    const currentDefaultSpeed =
+      typeof video.defaultPlaybackRate === "number"
+        ? video.defaultPlaybackRate
+        : targetSpeed;
+
+    if (
+      isSameSpeed(video.playbackRate, targetSpeed) &&
+      isSameSpeed(currentDefaultSpeed, targetSpeed)
+    ) {
+      return;
+    }
+
+    state.isApplyingSpeed = true;
+
+    try {
+      if (!isSameSpeed(currentDefaultSpeed, targetSpeed)) {
+        video.defaultPlaybackRate = targetSpeed;
+      }
+    } catch (error) {
+      // Some player states may reject defaultPlaybackRate updates.
+    }
+
+    try {
+      if (!isSameSpeed(video.playbackRate, targetSpeed)) {
+        video.playbackRate = targetSpeed;
+      }
+    } catch (error) {
+      // Playback rate can briefly reject updates during player transitions.
+    }
+
+    window.setTimeout(() => {
+      state.isApplyingSpeed = false;
+    }, 0);
+  }
+
+  function applyPreferredSpeed(video = state.currentVideo) {
+    if (state.preferredSpeed === null) {
+      return;
+    }
+
+    applyPlaybackRate(state.preferredSpeed, video);
+  }
+
+  function resetPlaybackRate(video = state.currentVideo) {
+    applyPlaybackRate(1, video);
+    state.pendingResetToNormal = false;
+  }
+
+  function syncVideoReference() {
+    const video = getVideoElement();
+
+    bindVideo(video);
+
+    if (video) {
+      if (state.pendingResetToNormal) {
+        resetPlaybackRate(video);
+        return;
+      }
+
+      applyPreferredSpeed(video);
     }
   }
-}
 
-// Listener para mensagens do popup.js
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "setSpeed") {
-    currentTargetSpeed = request.speed; // Atualiza a velocidade alvo (pode ser null)
-    console.log(`Velocidade recebida do popup: ${currentTargetSpeed === null ? 'Controle Desligado' : currentTargetSpeed + 'x'}`);
-    findAndApplyConfiguredSpeed(); // Aplica a nova velocidade imediatamente
-    sendResponse({ status: "Velocidade atualizada" });
+  function updatePreferredSpeed(nextSpeed) {
+    const normalizedSpeed = normalizeSpeed(nextSpeed);
+    const wasControlActive = state.preferredSpeed !== null;
+
+    state.preferredSpeed = normalizedSpeed;
+    state.pendingResetToNormal = wasControlActive && normalizedSpeed === null;
+
+    if (state.currentVideo) {
+      if (state.pendingResetToNormal) {
+        resetPlaybackRate(state.currentVideo);
+        return;
+      }
+
+      applyPreferredSpeed(state.currentVideo);
+      return;
+    }
+
+    scheduleSync(0);
   }
-  return true; // Para sendResponse assíncrono, se necessário
-});
 
-// Carrega a velocidade salva quando o content script é injetado
-chrome.storage.sync.get(['youtubePlaybackSpeed'], (result) => {
-  if (result.youtubePlaybackSpeed !== undefined) {
-    currentTargetSpeed = result.youtubePlaybackSpeed;
-    console.log(`Velocidade inicial carregada do storage: ${currentTargetSpeed === null ? 'Controle Desligado' : currentTargetSpeed + 'x'}`);
-  } else {
-    // Se não houver nada salvo no storage, mantém o controle desligado (null).
-    currentTargetSpeed = null;
-    console.log('Nenhuma velocidade salva anteriormente. Controle permanece desligado.');
+  function handleVideoLifecycle() {
+    scheduleSync(0);
   }
-  findAndApplyConfiguredSpeed(); // Tenta aplicar ao carregar a página
-});
 
-// MutationObserver para lidar com a navegação SPA do YouTube
-const observer = new MutationObserver((mutationsList, observerInstance) => {
-  // Debounce: cancela o timer anterior e cria um novo
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
+  function handleRateChange() {
+    if (
+      state.isApplyingSpeed ||
+      state.preferredSpeed === null ||
+      !state.currentVideo
+    ) {
+      return;
+    }
+
+    if (!isSameSpeed(state.currentVideo.playbackRate, state.preferredSpeed)) {
+      applyPreferredSpeed(state.currentVideo);
+    }
   }
-  // Aplica a velocidade apenas após 500ms sem novas mutações
-  debounceTimer = setTimeout(() => {
-    findAndApplyConfiguredSpeed();
-    debounceTimer = null;
-  }, 500);
-});
 
-// Observa mudanças no corpo do documento ou em um container mais específico do player
-// YouTube usa 'ytd-page-manager' para carregar novas "páginas"
-const pageManager = document.querySelector("ytd-page-manager");
-if (pageManager) {
-    observer.observe(pageManager, { childList: true, subtree: true });
-} else {
-    // Fallback se ytd-page-manager não for encontrado
-    observer.observe(document.body, { childList: true, subtree: true });
-    console.warn("Elemento ytd-page-manager não encontrado. Observando document.body.");
-}
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "sync" || !(STORAGE_KEY in changes)) {
+      return;
+    }
 
-console.log('YouTube Speed Control: content script carregado e observando.');
+    updatePreferredSpeed(changes[STORAGE_KEY].newValue);
+  });
+
+  chrome.storage.sync.get([STORAGE_KEY], (result) => {
+    const initialSpeed = chrome.runtime.lastError
+      ? null
+      : result[STORAGE_KEY];
+
+    updatePreferredSpeed(initialSpeed);
+  });
+
+  const observer = new MutationObserver(() => {
+    scheduleSync();
+  });
+
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+
+  NAVIGATION_EVENTS.forEach((eventName) => {
+    window.addEventListener(eventName, () => scheduleSync(0), { passive: true });
+    document.addEventListener(eventName, () => scheduleSync(0), {
+      passive: true
+    });
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      scheduleSync(0);
+    }
+  });
+
+  scheduleSync(0);
+})();

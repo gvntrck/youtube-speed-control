@@ -1,23 +1,23 @@
 {
   "manifest_version": 3,
   "name": "YouTube Speed Control",
-  "version": "2.1",
-  "description": "Controla facilmente a velocidade de reprodução dos vídeos do YouTube.",
+  "version": "3.0.0",
+  "description": "Mantem a velocidade escolhida nos videos do YouTube, inclusive em navegacao SPA.",
   "permissions": [
-    "storage",
-    "scripting"
-  ],
-  "host_permissions": [
-    "*://*.youtube.com/*"
+    "storage"
   ],
   "action": {
+    "default_title": "YouTube Speed Control",
     "default_popup": "popup.html"
-    
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/watch*"],
-      "js": ["content.js"],
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ]

@@ -1,58 +1,36 @@
 # YouTube Speed Control
 
-Extensão para Chrome que permite controlar facilmente a velocidade de reprodução dos vídeos do YouTube.
+Extensao para Chrome que fixa uma velocidade de reproducao nos videos do YouTube e reaplica o valor mesmo quando a plataforma navega sem recarregar a pagina.
 
-## 🚀 Funcionalidades
+## Recursos
 
-- Controle rápido de velocidade de reprodução (1.0x, 1.25x, 1.5x, 1.75x, 2.0x)
-- Opção para desligar o controle automático
-- Configuração salva automaticamente
-- Interface simples e intuitiva
+- Barra de velocidade estilo volume com pontos clicaveis de `1.0x` ate `3.0x`
+- Modo `Desligar controle` para deixar o YouTube seguir a velocidade manual
+- Persistencia da configuracao em `chrome.storage.sync`
+- Reaplicacao automatica quando o player muda, o video troca ou a rota do YouTube muda
 
-## 📦 Instalação
+## Como instalar
 
-### 1. Baixar o projeto
+1. Abra `chrome://extensions/`
+2. Ative o `Modo do desenvolvedor`
+3. Clique em `Carregar sem compactacao`
+4. Selecione esta pasta
 
-Clone ou baixe este repositório:
+## Como usar
 
-```bash
-git clone https://github.com/gvntrck/youtube-speed-control.git
-```
-
-### 2. Instalar no Chrome
-
-1. Abra o Chrome e acesse: `chrome://extensions/`
-2. Ative o **Modo do desenvolvedor** (canto superior direito)
-3. Clique em **Carregar sem compactação**
-4. Selecione a pasta do projeto baixado
-5. Pronto! A extensão está instalada
-
-## 🎯 Como usar
-
-1. Abra qualquer vídeo no YouTube
-2. Clique no ícone da extensão na barra de ferramentas
+1. Abra qualquer pagina do YouTube
+2. Clique no icone da extensao
 3. Escolha a velocidade desejada
-4. A velocidade será aplicada automaticamente
+4. A extensao passa a manter essa velocidade automaticamente enquanto o controle estiver ligado
 
-## 📝 Versão
+## Estrutura
 
-**v2.1** - Correções de bugs e melhorias de performance
+- `manifest.json`: configuracao da extensao
+- `content.js`: monitoramento do player, mudancas de rota e reaplicacao da velocidade
+- `popup.html`: estrutura do popup
+- `popup.css`: estilos do popup
+- `popup.js`: leitura e gravacao do estado salvo
 
-## 🛠️ Arquivos
+## Versao
 
-- `manifest.json` - Configuração da extensão
-- `content.js` - Script que controla a velocidade dos vídeos
-- `popup.html` - Interface do popup
-- `popup.js` - Lógica do popup
-
-## 📄 Licença
-
-Este projeto está licenciado sob a **GNU General Public License v3.0 (GPL-3.0)**.
-
-Você é livre para:
-- ✅ Usar o software para qualquer propósito
-- ✅ Estudar como o programa funciona e adaptá-lo
-- ✅ Redistribuir cópias
-- ✅ Melhorar o programa e liberar suas melhorias
-
-Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+`v3.0.0` - refatoracao completa para tornar o comportamento mais consistente e confiavel

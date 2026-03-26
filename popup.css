@@ -1,0 +1,261 @@
+:root {
+  --bg-top: #fff7ed;
+  --bg-bottom: #fee2e2;
+  --panel: rgba(255, 255, 255, 0.88);
+  --panel-border: rgba(194, 65, 12, 0.16);
+  --text: #1f2937;
+  --muted: #57534e;
+  --accent: #c2410c;
+  --accent-strong: #9a3412;
+  --accent-soft: rgba(251, 146, 60, 0.18);
+  --track: rgba(194, 65, 12, 0.14);
+  --off: #334155;
+  --off-soft: rgba(148, 163, 184, 0.2);
+  --pending: #9a3412;
+  --error: #b91c1c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 360px;
+  font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(251, 146, 60, 0.22), transparent 34%),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+}
+
+.popup {
+  padding: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  line-height: 1.05;
+}
+
+.description {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.slider-card {
+  padding: 16px;
+  border: 1px solid var(--panel-border);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.1);
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-copy {
+  min-width: 0;
+}
+
+.card-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.card-detail {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.toggle-button {
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, var(--accent) 0%, #ea580c 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(194, 65, 12, 0.24);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    opacity 0.16s ease;
+}
+
+.toggle-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(194, 65, 12, 0.3);
+}
+
+.toggle-button.off {
+  background: linear-gradient(135deg, var(--off) 0%, #475569 100%);
+  box-shadow: 0 10px 24px rgba(51, 65, 85, 0.2);
+}
+
+.current-speed {
+  margin: 16px 0 10px;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text);
+}
+
+.speed-range {
+  --range-progress: 25%;
+  width: 100%;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.speed-range:focus {
+  outline: none;
+}
+
+.speed-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      var(--accent) 0%,
+      var(--accent) var(--range-progress),
+      var(--track) var(--range-progress),
+      rgba(255, 255, 255, 0.92) 100%
+    );
+}
+
+.speed-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -7px;
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+  transition: transform 0.16s ease;
+}
+
+.speed-range:active::-webkit-slider-thumb {
+  transform: scale(1.06);
+}
+
+.speed-points {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 14px;
+}
+
+.speed-point {
+  border: 0;
+  background: none;
+  padding: 0 0 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.speed-point-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(154, 52, 18, 0.22);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.speed-point-label {
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.speed-point-label.major {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.speed-point.active .speed-point-dot {
+  background: var(--accent);
+  transform: scale(1.25);
+  box-shadow: 0 0 0 5px var(--accent-soft);
+}
+
+.speed-point.active .speed-point-label {
+  color: var(--accent-strong);
+}
+
+.speed-points[data-mode="off"] .speed-point.active .speed-point-dot {
+  background: var(--off);
+  box-shadow: 0 0 0 5px var(--off-soft);
+}
+
+.speed-points[data-mode="off"] .speed-point.active .speed-point-label {
+  color: var(--off);
+}
+
+.status {
+  min-height: 20px;
+  margin: 14px 2px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.status[data-tone="pending"] {
+  color: var(--pending);
+}
+
+.status[data-tone="error"] {
+  color: var(--error);
+}
+
+.status[data-tone="success"] {
+  color: var(--accent-strong);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
