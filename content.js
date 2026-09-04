@@ -7,6 +7,12 @@
 
   const STORAGE_KEY = "youtubePlaybackSpeed";
   const VIDEO_EVENTS = ["loadedmetadata", "canplay", "play", "emptied"];
+  const LIVE_EVENTS = [
+    "timeupdate",
+    "progress",
+    "durationchange",
+    "playing"
+  ];
   const NAVIGATION_EVENTS = [
     "yt-navigate-finish",
     "yt-page-data-updated",
@@ -14,13 +20,16 @@
     "pageshow"
   ];
   const SPEED_EPSILON = 0.01;
+  const LIVE_EDGE_TOLERANCE_SECONDS = 3;
+  const LIVE_MONITOR_INTERVAL_MS = 1000;
 
   const state = {
     preferredSpeed: null,
     currentVideo: null,
     syncTimer: null,
     isApplyingSpeed: false,
-    pendingResetToNormal: false
+    pendingResetToNormal: false,
+    liveEdgeHandled: false
   };
 
   function normalizeSpeed(value) {
@@ -63,6 +72,10 @@
       state.currentVideo.removeEventListener(eventName, handleVideoLifecycle);
     });
 
+    LIVE_EVENTS.forEach((eventName) => {
+      state.currentVideo.removeEventListener(eventName, handleLivePlayback);
+    });
+
     state.currentVideo.removeEventListener("ratechange", handleRateChange);
     state.currentVideo = null;
   }
@@ -79,9 +92,16 @@
     }
 
     state.currentVideo = video;
+    state.liveEdgeHandled = false;
 
     VIDEO_EVENTS.forEach((eventName) => {
       state.currentVideo.addEventListener(eventName, handleVideoLifecycle, {
+        passive: true
+      });
+    });
+
+    LIVE_EVENTS.forEach((eventName) => {
+      state.currentVideo.addEventListener(eventName, handleLivePlayback, {
         passive: true
       });
     });
@@ -157,6 +177,98 @@
     }
   }
 
+  function getLiveWindow(video) {
+    if (!video || !video.seekable || video.seekable.length === 0) {
+      return null;
+    }
+
+    const lastRangeIndex = video.seekable.length - 1;
+
+    try {
+      const start = video.seekable.start(lastRangeIndex);
+      const end = video.seekable.end(lastRangeIndex);
+
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
+        return null;
+      }
+
+      return { start, end };
+    } catch (error) {
+      // The seekable ranges can change while YouTube replaces media segments.
+      return null;
+    }
+  }
+
+  function hasLiveIndicator() {
+    const player = document.querySelector("#movie_player");
+
+    return Boolean(
+      player &&
+        (player.classList.contains("ytp-live") ||
+          player.querySelector(".ytp-live, .ytp-live-badge"))
+    );
+  }
+
+  function isLiveStream(video) {
+    return video.duration === Infinity || hasLiveIndicator();
+  }
+
+  function disableControlAtLiveEdge() {
+    if (
+      state.preferredSpeed === null ||
+      state.liveEdgeHandled ||
+      !state.currentVideo
+    ) {
+      return;
+    }
+
+    const speedBeforeDisable = state.preferredSpeed;
+
+    state.liveEdgeHandled = true;
+    state.preferredSpeed = null;
+    state.pendingResetToNormal = false;
+    resetPlaybackRate(state.currentVideo);
+
+    chrome.storage.sync.set({ [STORAGE_KEY]: null }, () => {
+      if (!chrome.runtime.lastError) {
+        return;
+      }
+
+      // Restore the local state if storage rejected the automatic change.
+      state.preferredSpeed = speedBeforeDisable;
+      state.liveEdgeHandled = false;
+      applyPreferredSpeed(state.currentVideo);
+    });
+  }
+
+  function checkLiveEdge() {
+    const video = state.currentVideo;
+
+    if (
+      !video ||
+      state.preferredSpeed === null ||
+      !Number.isFinite(video.currentTime)
+    ) {
+      return;
+    }
+
+    const liveWindow = getLiveWindow(video);
+
+    if (!liveWindow || !isLiveStream(video)) {
+      state.liveEdgeHandled = false;
+      return;
+    }
+
+    const secondsBehindLive = liveWindow.end - video.currentTime;
+
+    if (secondsBehindLive > LIVE_EDGE_TOLERANCE_SECONDS) {
+      state.liveEdgeHandled = false;
+      return;
+    }
+
+    disableControlAtLiveEdge();
+  }
+
   function updatePreferredSpeed(nextSpeed) {
     const normalizedSpeed = normalizeSpeed(nextSpeed);
     const wasControlActive = state.preferredSpeed !== null;
@@ -179,6 +291,10 @@
 
   function handleVideoLifecycle() {
     scheduleSync(0);
+  }
+
+  function handleLivePlayback() {
+    checkLiveEdge();
   }
 
   function handleRateChange() {
@@ -233,5 +349,6 @@
     }
   });
 
+  window.setInterval(checkLiveEdge, LIVE_MONITOR_INTERVAL_MS);
   scheduleSync(0);
 })();
