@@ -34,4 +34,4 @@ Extensao para Chrome que fixa uma velocidade de reproducao nos videos do YouTube
 
 ## Versao
 
-`v3.1.0` - desligamento automatico da velocidade ao alcancar o ponto ao vivo
+`v3.1.1` - correcao: nao desliga controle em fim de video comum (VOD)

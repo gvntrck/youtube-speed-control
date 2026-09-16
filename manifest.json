@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube Speed Control",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Mantem a velocidade escolhida e volta ao normal ao alcancar o ponto ao vivo.",
   "permissions": [
     "storage"
