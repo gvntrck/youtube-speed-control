@@ -6,7 +6,6 @@ Extensao para Chrome que fixa uma velocidade de reproducao nos videos do YouTube
 
 - Barra de velocidade estilo volume com pontos clicaveis de `1.0x` ate `3.0x`
 - Modo `Desligar controle` para deixar o YouTube seguir a velocidade manual
-- Desligamento automatico ao alcancar o ponto ao vivo de uma live, com retorno para `1.0x`
 - Persistencia da configuracao em `chrome.storage.sync`
 - Reaplicacao automatica quando o player muda, o video troca ou a rota do YouTube muda
 
@@ -34,4 +33,4 @@ Extensao para Chrome que fixa uma velocidade de reproducao nos videos do YouTube
 
 ## Versao
 
-`v3.1.1` - correcao: nao desliga controle em fim de video comum (VOD)
+`v3.0.0` - refatoracao completa para tornar o comportamento mais consistente e confiavel
