@@ -202,11 +202,7 @@
   function hasLiveIndicator() {
     const player = document.querySelector("#movie_player");
 
-    return Boolean(
-      player &&
-        (player.classList.contains("ytp-live") ||
-          player.querySelector(".ytp-live, .ytp-live-badge"))
-    );
+    return Boolean(player && player.classList.contains("ytp-live"));
   }
 
   function isLiveStream(video) {
